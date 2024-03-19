@@ -1,0 +1,5 @@
+
+coops/*
+!coops/.gitkeep
+
+config.json
