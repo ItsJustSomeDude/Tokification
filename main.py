@@ -327,15 +327,11 @@ def askDateTime():
     try:
         output = subprocess.check_output(["timeout", "120", "termux-dialog", "date", "-d", "yyyy-MM-dd"], text=True)
         reply = json.loads(output)
-        #print(reply)
-
         if reply['code'] != -1:
             return
 
         output2 = subprocess.check_output(["timeout", "120", "termux-dialog", "time", ], text=True)
         reply2 = json.loads(output2)
-        #print(reply)
-
         if reply2['code'] != -1:
             return
 
@@ -355,6 +351,30 @@ def askString(title):
     except subprocess.CalledProcessError as e:
         return None
 
+def askRadio(title, options):
+    try:
+        output = subprocess.check_output(["timeout", "120", "termux-dialog", "radio", "-t", title, "-v", ",".join(options)], text=True)
+        reply = json.loads(output)
+
+        if reply['code'] != -1 or 'index' not in reply:
+            return None
+
+        return { 'index': reply['index'], 'text': reply['text'] }
+    except subprocess.CalledProcessError as e:
+        return None
+
+def askDropdown(title, options):
+    try:
+        output = subprocess.check_output(["timeout", "120", "termux-dialog", "spinner", "-t", title, "-v", ",".join(options)], text=True)
+        reply = json.loads(output)
+
+        if reply['code'] != -1 or 'index' not in reply:
+            return None
+
+        return { 'index': reply['index'], 'text': reply['text'] }
+    except subprocess.CalledProcessError as e:
+        return None
+
 def toast(message):
     try:
         subprocess.run(["termux-toast", message])
@@ -366,38 +386,27 @@ def sendToken(count = 0):
     sendAmount = 0
     sendTime = int(time.time())
 
-    try:
-        # try catch this
-        output = subprocess.check_output(["timeout", "120", "termux-dialog", "spinner", "-t", "Sending Tokens to...", "-v", ",".join(people) + ",Other"], text=True)
-        reply = json.loads(output)
-        #print(reply)
+    reply = askDropdown("Choose Player", ",".join(people))
+    if not reply:
+        return
+    person = reply['text']
 
-        if reply['code'] != -1:
+    if count == 0:
+        reply2 = askDropdown("Token Count", ["1","2","3","4","5","6","7","8","9","10",])
+        if not reply2:
             return
+        count = int(reply2['text'])
 
-        if count == 0:
-            output2 = subprocess.check_output(["timeout", "120", "termux-dialog", "spinner", "-t", "Tokens Count:", "-v", "1,2,3,4,5,6,7,8,9,10"], text=True)
-            reply2 = json.loads(output2)
-            #print(reply)
+    if person == 'Other':
+        newPerson = askString('Enter Name:')
+        if not newPerson:
+            newPerson = "SpeedySoul"
+        person = newPerson
 
-            if reply2['code'] != -1:
-                return
-            count = int(reply2['text'])
+    addEvent(sendTime, count, 'received', person, 0)
+    saveCoop()
 
-        person = reply['text']
-
-        if person == 'Other':
-            newPerson = askString('Enter Name:')
-            if not newPerson:
-                newPerson = "SpeedySoul"
-            person = newPerson
-
-        addEvent(sendTime, count, 'received', person, 0)
-        saveCoop()
-
-        toast(f"Recorded {count} tokens to {person}")
-    except subprocess.CalledProcessError as e:
-        print("Send Timeout.")
+    toast(f"Recorded {count} tokens to {person}")
 
 def ui():
     script = f"python {os.path.abspath(__file__)}"
@@ -414,32 +423,23 @@ def ui():
         "--button3", "Copy Report",
         "--button3-action", f"{script} copy-report"
     ]
-    uiCmd = [
-        "timeout", "120",
-        "termux-dialog", "radio",
-        "-t", "Tokification.py",
-        "-v", ",".join([
-            "Send Tokens",
-            "Generate Report",
-            "Generate Detailed Report",
-            "Edit Events",
-            f"Start Time: {extDate(startTime)}",
-            f"End time: {extDate(endTime)}",
-            f"Coop: {selectedCoop}",
-            f"Player Name: {sink}"
-        ])
-    ]
-    #print(noteCmd)
 
     try:
         subprocess.run(noteCmd)
-        out = subprocess.check_output(uiCmd)
-        reply = json.loads(out)
     except subprocess.CalledProcessError as e:
-        print("Timed Out.", e)
-        return
+        print("Timed Out creating notification:", e)
 
-    if reply['code'] != -1 or 'index' not in reply:
+    reply = askRadio("Tokification.py", [
+        "Send Tokens",
+        "Generate Report",
+        "Generate Detailed Report",
+        "Edit Events",
+        f"Start Time: {extDate(startTime)}",
+        f"End time: {extDate(endTime)}",
+        f"Coop: {selectedCoop}",
+        f"Player Name: {sink}"
+    ])
+    if not reply:
         return
 
     index = reply['index']
