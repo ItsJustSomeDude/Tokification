@@ -78,6 +78,7 @@ def addEvent(time, number, direction, person, id):
         'player': person,
         'id': id
     })
+    events.sort(key=lambda x: x["time"])
 
 def processNote(note):
     global startTime
@@ -205,7 +206,7 @@ def report():
         tvalSent[person] = 0.0
         tvalRec[person] = 0.0
 
-    for ev in sorted(events, key=lambda x: x["time"]):
+    for ev in events:
         t = ts(ev['time'])
         d = ev['direction']
         c = int(ev['count'])
@@ -276,7 +277,7 @@ def detailedReport():
         rows[person] = []
         cums[person] = 0.0
 
-    for ev in sorted(events, key=lambda x: x["time"]):
+    for ev in events:
         t = ts(ev['time'])
         d = ev['direction']
         c = int(ev['count'])
@@ -562,7 +563,7 @@ def loadCoop():
     if os.path.exists(coopFile):
         with open(coopFile, 'r') as file:
             data = json.load(file)
-            events = data['events']
+            events = sorted(data['events'], key=lambda x: x["time"])
             people = data['people']
             startTime = data['startTime']
             endTime = data['endTime']
