@@ -638,12 +638,13 @@ def loadCoop():
         with open(coopFile, 'r') as file:
             data = json.load(file)
             events = sorted(data['events'], key=lambda x: x["time"])
-            people = data['people']
             startTime = data['startTime']
             endTime = data['endTime']
 
             for ev in events:
                 ids.append(ev['id'])
+                if ev['player'] not in people:
+                    people.append(ev['player'])
     else:
         saveCoop()
 
@@ -659,7 +660,6 @@ def saveCoop():
     with open(coopFile, 'w') as f:
         json.dump({
             'events': events,
-            'people': people,
             'startTime': startTime,
             'endTime': endTime,
         }, f, indent=4)
