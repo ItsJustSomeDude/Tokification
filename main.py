@@ -323,14 +323,14 @@ def copy(str):
     print(str)
     subprocess.run(["termux-clipboard-set", str])
 
-def askDateTime():
+def askDateTime(title = 'Enter Date/Time'):
     try:
-        output = subprocess.check_output(["timeout", "120", "termux-dialog", "date", "-d", "yyyy-MM-dd"], text=True)
+        output = subprocess.check_output(["timeout", "120", "termux-dialog", "date", "-t", title, "-d", "yyyy-MM-dd"], text=True)
         reply = json.loads(output)
         if reply['code'] != -1:
             return
 
-        output2 = subprocess.check_output(["timeout", "120", "termux-dialog", "time", ], text=True)
+        output2 = subprocess.check_output(["timeout", "120", "termux-dialog", "time", "-t", title], text=True)
         reply2 = json.loads(output2)
         if reply2['code'] != -1:
             return
@@ -386,27 +386,98 @@ def sendToken(count = 0):
     sendAmount = 0
     sendTime = int(time.time())
 
-    reply = askDropdown("Choose Player", ",".join(people))
-    if not reply:
+    person = selectPlayer()
+    if not person:
         return
-    person = reply['text']
 
     if count == 0:
-        reply2 = askDropdown("Token Count", ["1","2","3","4","5","6","7","8","9","10",])
+        reply2 = askDropdown("Token Count", ["1","2","3","4","5","6","7","8","9","10"])
         if not reply2:
             return
         count = int(reply2['text'])
+
+    addEvent(sendTime, count, 'received', person, 0)
+    saveCoop()
+
+    toast(f"Recorded {count} tokens to {person}")
+
+def editEvents():
+    print("Editing events.")
+    eventNames = []
+    for ev in events:
+        eventNames.append(f"{extDate(ev['time'])} {ev['player']} {ev['direction']} {ev['count']}")
+
+    reply = askDropdown("Choose an Event", eventNames)
+    if not reply:
+        return
+    eventIndex = reply['index']
+    event = events[eventIndex]
+
+    reply2 = askRadio("Choose what to edit", [
+        f"Time: {extDate(event['time'])}",
+        f"Player: {event['player']}",
+        f"Direction: {event['direction']}",
+        f"Count: {event['count']}",
+        f"Delete Event"
+    ])
+    if not reply2:
+        return
+    action = reply2['index']
+
+    if action == 0:
+        newTime = askDateTime("New time")
+        if not newTime:
+            return
+        event['time'] = newTime
+    elif action == 1:
+        newPlayer = selectPlayer()
+        if not newPlayer:
+            return
+        event['player'] = newPlayer
+    elif action == 2:
+        newDir = askRadio("Choose Direction", [
+            f"{event['player']} Sent the Tokens",
+            f"{event['player']} Received the Tokens"
+        ])
+        if not newDir:
+            return
+        if newDir['index'] == 0:
+            event['direction'] = "sent"
+        else:
+            event['direction'] = "received"
+    elif action == 3:
+        newCount = askString("Enter Count")
+        if not newCount:
+            return
+        try:
+            event['count'] = int(newCount)
+        except ValueError:
+            return
+    elif action == 4:
+        confirm = askRadio(f"Delete {eventNames[eventIndex]}?", ["Yes", "No"])
+        if not confirm or confirm['index'] != 0:
+            return
+        event = None
+
+    if event:
+        events[eventIndex] = event
+    else:
+        del events[eventIndex]
+    saveCoop()
+    toast("Event Saved.")
+
+def selectPlayer():
+    reply = askDropdown("Choose Player", people + ['Other'])
+    if not reply:
+        return
+    person = reply['text']
 
     if person == 'Other':
         newPerson = askString('Enter Name:')
         if not newPerson:
             newPerson = "SpeedySoul"
         person = newPerson
-
-    addEvent(sendTime, count, 'received', person, 0)
-    saveCoop()
-
-    toast(f"Recorded {count} tokens to {person}")
+    return person
 
 def ui():
     script = f"python {os.path.abspath(__file__)}"
@@ -451,6 +522,7 @@ def ui():
         processArg("d-report")
     elif index == 3:
         processArg("edit")
+        ui()
     elif index == 4:
         processArg("start-time")
         ui()
@@ -526,6 +598,8 @@ def processArg(arg):
         changeCoop()
     elif arg == "change-sink":
         changeSink()
+    elif arg == "edit":
+        editEvents()
     else:
         print('Must pass a valid command!')
 
