@@ -3,9 +3,6 @@ import json
 import datetime
 
 class TermuxUI:
-    def __init__(self):
-        print("Setting up Termux for UI.")
-
     def _dialog(self, type, title = "", args = []):
         try:
             output = subprocess.check_output([
@@ -103,9 +100,6 @@ class TermuxUI:
         subprocess.run(["termux-clipboard-set", str])
 
 class TextUI:
-    def __init__(self):
-        print("Setting up CLI.")
-
     def _prompt(self, title, hint):
         print(title)
         reply = input(f"({hint}): ")
