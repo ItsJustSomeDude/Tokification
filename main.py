@@ -12,6 +12,10 @@ import sys
 from ui import TermuxUI
 from ui import TextUI
 
+from date import ts
+from date import unts
+from date import extDate
+
 # Contract Values
 people = []
 events = []
@@ -27,37 +31,6 @@ sink = ""
 cwd = os.path.dirname(os.path.realpath(__file__))
 configFile = os.path.join(cwd, "config.json")
 coopFile = ""
-
-# Date/Time Format Strings
-intFormat = "%Y-%m-%d %H:%M:%S"
-extFormat = "%b %d %I:%M %p"
-
-def ts(dateStr):
-    try:
-        dt = datetime.datetime.strptime(dateStr, intFormat)
-        return int(dt.timestamp())
-    except ValueError:
-        print("Invalid date string format:", dateStr)
-        return None
-
-def unts(timestamp):
-    try:
-        dt = datetime.datetime.fromtimestamp(timestamp)
-        return dt.strftime(intFormat)
-    except ValueError:
-        print("Invalid timestamp:", timestamp)
-        return None
-
-def extDate(input):
-    try:
-        if isinstance(input, int):
-            input = unts(time)
-
-        dt = datetime.datetime.strptime(input, intFormat)
-        return dt.strftime(extFormat)
-    except ValueError:
-        print("Invalid timestamp:", input)
-        return None
 
 def addEvent(time, number, direction, person, id):
     global startTime
