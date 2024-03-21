@@ -4,7 +4,7 @@
 
 This is a Real-Time Token Value Tracker for Egg, Inc. Contract Speedruns. If the Sink is running it, all players TVals are tracked, but individual players can also run it to track their own.
 
-The script is written in Python, and designed to run inside the Termux app.  Termux must be installed from GitHub or from F-Droid as the Play Store version is no longer updated. Termux API is also required for GUIs and Notification access.
+The script is written in Python, and designed to run inside the Termux app. Termux must be installed from GitHub or from F-Droid as the Play Store version is no longer updated. Termux API is also required for GUIs and Notification access.
 
 There is no support for iOS, but if you know of a way for an App to get a list of all notifications (not just ones posted by that App), please contact me!
 
@@ -40,13 +40,25 @@ Android seems to prevent any individual app from posting more than ~45 notificat
 
 I recommend generating a report about every 15 minutes, or more often if in a VERY large co-op (30+ players). 
 
-### CLI usage
+### CLI usage (Advanced)
 
-You can call the script with Command Line Args to trigger certain things.
+You can call the script with Command Line Args to trigger certain menus.
 
-`python main.py <arg>`
+```bash
+python main.py <arg>
+```
 
-Where <arg> is one of `{ ui, send, send-6, report, copy-report, d-report, change-coop, change-sink }` These map to many of the same actions on the main menu.
+Where `<arg>` is one of `{ ui, send, send-6, report, copy-report, d-report, edit, start-time, end-time, change-coop, change-sink }`. These map to many of the same actions on the main menu.
+
+There is also a text-based UI that can be used over SSH if you play with a phone and computer at the same time. If called with the argument 'cli', this UI will be used instead of on-device dialogs.
+
+```bash
+python main.py cli
+# or
+python main.py cli <arg>
+```
+
+Follow the directions on the [Termux Wiki](https://wiki.termux.com/wiki/Remote_Access#Using_the_SSH_server) for instructions on how to setup SSH. If called in a shell running over SSH, the CLI will be used by default.
 
 ### Help
 

@@ -107,7 +107,7 @@ def processNote(note):
 
 def processAllNotes():
     rawNotes = ""
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 2 and os.path.exists(sys.argv[2]):
         print('Using Debug Notifications!')
         with open(sys.argv[2], 'r') as file:
             rawNotes = file.read()
@@ -409,10 +409,11 @@ def mainMenu():
         "--button3-action", f"{script} copy-report"
     ]
 
-    try:
-        subprocess.run(noteCmd)
-    except subprocess.CalledProcessError as e:
-        print("Timed Out creating notification:", e)
+    if not cli:
+        try:
+            subprocess.run(noteCmd)
+        except subprocess.CalledProcessError as e:
+            print("Timed Out creating notification:", e)
 
     reply = ui.radio("Tokification.py", [
         "Send Tokens",
@@ -581,10 +582,23 @@ def saveCoop():
 loadConfig()
 loadCoop()
 
-ui = TermuxUI()
+cli=False
+if 'SSH_CLIENT' in os.environ or (len(sys.argv) > 1 and sys.argv[1] == "cli"):
+    ui = TextUI()
+    cli=True
+else:
+    ui = TermuxUI()
 
 if len(sys.argv) < 2:
+    # no args
     processArg("ui")
+elif len(sys.argv) > 1 and sys.argv[1] == "cli":
+    # arg1 == 'cli'
+    if len(sys.argv) < 3:
+        # cli is only arg
+        processArg("ui")
+    else:
+        processArg(sys.argv[2])
 else:
     processArg(sys.argv[1])
 
