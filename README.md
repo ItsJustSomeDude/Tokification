@@ -26,11 +26,11 @@ There is no support for iOS, but if you know of a way for an App to get a list o
 
 ### GUI Usage
 
-This script is designed to be run by the Token Broker/Sink to track the Token Values (TVal) of all the players in the Co-op. It _can_ also be used to track your own TVal if you're not the sink, but it's a little less intuitive.
+This script is designed to be run by the Token Broker/Sink to track the Token Values (TVal) of all the players in the Co-op. It _can_ also be used to track your own TVal if you're not the sink as well.
 
 As the sink, when you're ready to start tracking tokens, open the Main Menu and enter the Co-op Code you want to track. When you send a player their tokens, choose "Send 6" or "Send Other" from the Notification, or "Send Tokens" from the Main Menu. Choose the player who received the Tokens, and the number of tokens sent (unless you chose "Send 6"). If the player is not in the list, choose "Other" and enter their In-Game Name. A toast will appear confirming the player and count that was recorded.
 
-If you're not the sink, the set the co-op code same as above. Each time you send a token to the sink, choose "Send Other" or "Main Menu > Send Tokens" and pick the Sink. You will probably have to choose Other and enter their In-Game Name the first time.
+If you're not the sink, set the co-op code same as above, and change the Mode to "standard" from the main menu. Your TVal info will then be shown in the notification, and the Report on the main menu will just show your values.
 
 Once you have an End Time estimation, enter it on the Main Menu. If the Start Time is incorrect, enter this as well. Next, choose "Generate Report" from the Main Menu or "Copy Report" from the notification. The report will be copied to your device's clipboard. This is pre-formatted for posting on Discord, so can be directly pasted into a message and sent.
 
@@ -48,7 +48,7 @@ You can call the script with Command Line Args to trigger certain menus.
 python main.py <arg>
 ```
 
-Where `<arg>` is one of `{ ui, send, send-6, report, copy-report, d-report, edit, start-time, end-time, change-coop, change-sink }`. These map to many of the same actions on the main menu.
+Where `<arg>` is one of `{ ui, send, send-1, send-6, report, copy-report, d-report, edit, start-time, end-time, change-coop, change-sink, notification }`. These map to many of the same actions on the main menu.
 
 There is also a text-based UI that can be used over SSH if you play with a phone and computer at the same time. If called with the argument 'cli', this UI will be used instead of on-device dialogs.
 

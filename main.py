@@ -26,6 +26,7 @@ endTime = ''
 # Config Values
 selectedCoop = ""
 sink = ""
+mode = ""
 
 # File Names
 cwd = os.path.dirname(os.path.realpath(__file__))
@@ -290,6 +291,54 @@ def detailedReport():
     print(table)
     return "\n".join(table)
 
+def simpleReport():
+    now = int(time.time())
+
+    est = ""
+    if startTime == "":
+        sinceHourStart = now % 3600
+        start = now - sinceHourStart
+        est += "(Unknown Start)"
+    else:
+        start = ts(startTime)
+
+    if endTime == "":
+        end = start + 12 * 60 * 60
+        est += "(Assuming 12 hour Duration)"
+    else:
+        end = ts(endTime)
+
+    tokensSent = 0
+    tvalSent = 0.0
+    tokensRec = 0
+    tvalRec = 0.0
+
+    for ev in events:
+        t = ts(ev['time'])
+        d = ev['direction']
+        c = int(ev['count'])
+
+        tv = tval(start, end, t, c)
+        if d == 'sent':
+            tokensRec += c
+            tvalRec += tv
+        else:
+            tokensSent += c
+            tvalSent += tv
+
+    tvNow = round(tval(start, end, now, 1), 4)
+    if now > end:
+        tvNow = "Co-op Ended."
+
+    out = "\n".join([
+        f"Your ΔTVal: {round(tvalSent - tvalRec, 4)} {est}",
+        f"TVal Now: {tvNow} {est}",
+        f"Sent TVal: {round(tvalSent, 4)} ({tokensSent} tokens)",
+        f"Received TVal: -{round(tvalRec, 4)} ({tokensRec} tokens)"
+    ])
+
+    return out
+
 def copyReport():
     processAllNotes()
     rep = report()
@@ -300,9 +349,12 @@ def sendToken(count = 0):
     sendAmount = 0
     sendTime = int(time.time())
 
-    person = selectPlayer()
-    if not person:
-        return
+    if mode == "sink":
+        person = selectPlayer()
+        if not person:
+            return
+    else:
+        person = "Sink"
 
     if count == 0:
         reply = ui.list("Token Count", ["1","2","3","4","5","6","7","8","9","10"])
@@ -389,31 +441,56 @@ def selectPlayer():
     if person == 'Other':
         newPerson = ui.string('Enter Name:')
         if not newPerson:
-            newPerson = "SpeedySoul"
+            newPerson = "Speedy Soul"
         person = newPerson
     return person
 
-def mainMenu():
-    script = f"python {os.path.abspath(__file__)}"
-    noteCmd = [
-        "termux-notification",
-        "-t", "Tokification.py",
-        "-i", "tok_egg_py",
-        "-c", "Click to open the Tokification menu.",
-        "--action", f"{script} ui",
-        "--button1", "Send 6",
-        "--button1-action", f"{script} send-6",
-        "--button2", "Send Other",
-        "--button2-action", f"{script} send",
-        "--button3", "Copy Report",
-        "--button3-action", f"{script} copy-report"
-    ]
+def notification():
+    if cli:
+        return
 
-    if not cli:
-        try:
-            subprocess.run(noteCmd)
-        except subprocess.CalledProcessError as e:
-            print("Timed Out creating notification:", e)
+    script = f"python {os.path.abspath(__file__)}"
+    if mode == "sink":
+        noteCmd = [
+            "termux-notification",
+            "-t", "Tokification.py",
+            "-i", "tok_egg_py",
+            "-c", f"Click for Menu.",
+            "--action", f"{script} ui",
+            "--button1", "Send 6",
+            "--button1-action", f"{script} send-6",
+            "--button2", "Send Other",
+            "--button2-action", f"{script} send",
+            "--button3", "Copy Report",
+            "--button3-action", f"{script} copy-report"
+        ]
+    else:
+        noteCmd = [
+            "termux-notification",
+            "-t", "Tokification.py",
+            "-i", "tok_egg_py",
+            "-c", simpleReport(),
+            "--action", f"{script} ui",
+            "--button1", "Send 1",
+            "--button1-action", f"{script} send-1",
+            "--button2", "Send Other",
+            "--button2-action", f"{script} send",
+            "--button3", "Refresh",
+            "--button3-action", f"{script} notification"
+        ]
+
+    try:
+        subprocess.run(noteCmd)
+    except subprocess.CalledProcessError as e:
+        print("Timed Out creating notification:", e)
+
+def mainMenu():
+    global mode
+
+    if cli:
+        print(simpleReport())
+    else:
+        notification()
 
     reply = ui.radio("Tokification.py", [
         "Send Tokens",
@@ -423,7 +500,8 @@ def mainMenu():
         f"Start Time: {extDate(startTime)}",
         f"End time: {extDate(endTime)}",
         f"Coop: {selectedCoop}",
-        f"Player Name: {sink}"
+        f"Player Name: {sink}",
+        f"Toggle Mode: {mode}"
     ])
     if not reply:
         return
@@ -432,7 +510,11 @@ def mainMenu():
     if index == 0:
         processArg("send")
     elif index == 1:
-        processArg("copy-report")
+        if mode == 'sink':
+            processArg("copy-report")
+        else:
+            ui.info('Report', simpleReport())
+            mainMenu()
     elif index == 2:
         processArg("d-report")
     elif index == 3:
@@ -449,6 +531,13 @@ def mainMenu():
         mainMenu()
     elif index == 7:
         processArg("change-sink")
+        mainMenu()
+    elif index == 8:
+        if mode == "sink":
+            mode = "standard"
+        else:
+            mode = "sink"
+        saveConfig()
         mainMenu()
 
 def askEndTime():
@@ -479,6 +568,8 @@ def changeCoop():
 
     selectedCoop = newStr
     saveConfig()
+    loadConfig()
+    loadCoop()
 
 def changeSink():
     global sink
@@ -490,7 +581,7 @@ def changeSink():
     saveConfig()
 
 def processArg(arg):
-    if arg == "ui":
+    if arg == "ui" or arg == "menu":
         mainMenu()
     elif arg == "send":
         processAllNotes()
@@ -498,6 +589,9 @@ def processArg(arg):
     elif arg == "send-6":
         processAllNotes()
         sendToken(6)
+    elif arg == "send-1":
+        processAllNotes()
+        sendToken(1)
     elif arg == "report":
         processAllNotes()
         print(report())
@@ -515,6 +609,11 @@ def processArg(arg):
         changeSink()
     elif arg == "edit":
         editEvents()
+    elif arg == "s-report":
+        simpleReport()
+    elif arg == "notification":
+        notification()
+
     else:
         print('Must pass a valid command!')
 
@@ -522,12 +621,14 @@ def loadConfig():
     global sink
     global selectedCoop
     global coopFile
+    global mode
 
     if os.path.exists(configFile):
         with open(configFile, 'r') as file:
             data = json.load(file)
             selectedCoop = data['coop']
             sink = data['sinkName']
+            mode = data['mode']
 
             coopFile = os.path.join(cwd, f"./coops/{ selectedCoop }.json")
     else:
@@ -538,7 +639,8 @@ def saveConfig():
     with open(configFile, 'w') as file:
         json.dump({
             'sinkName': sink,
-            'coop': selectedCoop
+            'coop': selectedCoop,
+            'mode': mode
         }, file, indent=4)
 
 def loadCoop():
