@@ -438,7 +438,7 @@ def loadCoop():
     global startTime
     global endTime
     ids = []
-    players = []
+    people = []
 
     coopFile = os.path.join(cwd, f"./coops/{ selectedCoop }.json")
 
