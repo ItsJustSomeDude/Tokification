@@ -34,7 +34,6 @@ mode = ""
 # File Names
 cwd = os.path.dirname(os.path.realpath(__file__))
 configFile = os.path.join(cwd, "config.json")
-coopFile = ""
 
 # Report Wrappers
 def report():
@@ -361,7 +360,6 @@ def changeCoop():
 
     selectedCoop = newStr
     saveConfig()
-    loadConfig()
     loadCoop()
 
 def changeSink():
@@ -406,15 +404,14 @@ def processArg(arg):
     elif arg == "s-report":
         simpleReport()
     elif arg == "notification":
+        processAllNotes()
         notification()
-
     else:
         print('Must pass a valid command!')
 
 def loadConfig():
     global sink
     global selectedCoop
-    global coopFile
     global mode
 
     if os.path.exists(configFile):
@@ -423,11 +420,8 @@ def loadConfig():
             selectedCoop = data['coop']
             sink = data['sinkName']
             mode = data['mode']
-
-            coopFile = os.path.join(cwd, f"./coops/{ selectedCoop }.json")
     else:
         saveConfig()
-        loadConfig()
 
 def saveConfig():
     with open(configFile, 'w') as file:
@@ -444,6 +438,9 @@ def loadCoop():
     global startTime
     global endTime
     ids = []
+    players = []
+
+    coopFile = os.path.join(cwd, f"./coops/{ selectedCoop }.json")
 
     if os.path.exists(coopFile):
         with open(coopFile, 'r') as file:
@@ -457,12 +454,18 @@ def loadCoop():
                 if ev['player'] not in people:
                     people.append(ev['player'])
     else:
-        saveCoop()
+        print(f"Coop save for {selectedCoop} does not exist!")
+        events = []
+        startTime = ""
+        endTime = ""
+
 
 def saveCoop():
     if selectedCoop == "":
         print("Cannot Save, no coop set!")
         return
+
+    coopFile = os.path.join(cwd, f"./coops/{ selectedCoop }.json")
 
     if not os.path.exists(os.path.dirname(coopFile)):
         os.makedirs(os.path.dirname(coopFile))
